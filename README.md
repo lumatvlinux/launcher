@@ -25,6 +25,15 @@ A sleek, console-style application launcher for Windows and Linux with gamepad s
 
 *Automatic program detection*
 
+
+https://github.com/user-attachments/assets/4dd6d86f-5606-47bd-aee5-2ff5c0afc82d
+
+*In motion*
+
+
+
+
+
 ## 🔧 Requirements
 
 - **Windows** 10/11 or **Linux** (Ubuntu 20.04+, Fedora, Arch, etc.)
