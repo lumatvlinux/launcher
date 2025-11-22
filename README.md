@@ -40,7 +40,7 @@ A sleek, console-style application launcher for Windows with gamepad support and
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/tv-launcher.git
+git clone https://github.com/Darkvinx88/tv-launcher.git
 cd tv-launcher
 ```
 
@@ -68,13 +68,9 @@ sudo pacman -S python-pyqt6 python-pip
 pip install -r requirements-linux.txt
 ```
 
-### 3. Create Assets Folder
-```bash
-mkdir assets
-mkdir assets/icons
-```
 
-### 4. Run the Launcher
+
+### 3. Run the Launcher
 
 **Windows:**
 ```bash
