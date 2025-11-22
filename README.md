@@ -65,7 +65,7 @@ sudo dnf install python3-qt6 python3-pip
 sudo pacman -S python-pyqt6 python-pip
 
 # Then install Python packages
-pip install -r requirements-linux.txt
+pip install -r requirements.txt
 ```
 
 
