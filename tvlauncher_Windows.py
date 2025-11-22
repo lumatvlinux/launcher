@@ -38,7 +38,7 @@ except ImportError:
 
 
 class ResponsiveScaling:
-    """Sistema di scaling responsive basato sulla risoluzione"""
+    """Resolution based responsive scaling"""
    
     def __init__(self):
         # Risoluzione di riferimento (quella su cui hai progettato l'interfaccia)
@@ -220,11 +220,11 @@ class ApiKeyDialog(QDialog):
         
         # Info text
         info = QLabel(
-            "Per scaricare automaticamente le immagini 16:9:\n\n"
-            "1. Vai su steamgriddb.com\n"
-            "2. Crea un account gratuito\n"
-            "3. Vai in Preferences → API\n"
-            "4. Genera una API Key e incollala qui sotto"
+            "To automatically download 16:9 images:\n\n"
+            "1. Go to steamgriddb.com\n"
+            "2. Create a free account\n"
+            "3. Go to Preferences → API\n"
+            "4. Generate an API Key and paste it here"
         )
         info.setStyleSheet("color: #aaa; font-size: 12px;")
         info.setWordWrap(True)
@@ -236,7 +236,7 @@ class ApiKeyDialog(QDialog):
         
         self.key_input = QLineEdit()
         self.key_input.setText(current_key)
-        self.key_input.setPlaceholderText("Incolla la tua API key qui...")
+        self.key_input.setPlaceholderText("Paste your API here . . .")
         layout.addWidget(self.key_input)
         
         layout.addStretch()
@@ -245,11 +245,11 @@ class ApiKeyDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.setSpacing(15)
         
-        self.save_btn = QPushButton("Salva")
+        self.save_btn = QPushButton("Save")
         self.save_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.save_btn.clicked.connect(self.accept)
         
-        self.cancel_btn = QPushButton("Annulla")
+        self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.cancel_btn.clicked.connect(self.reject)
         
@@ -534,7 +534,7 @@ class ProgramScanDialog(QDialog):
     def __init__(self, image_manager=None, parent=None):
         super().__init__(parent)
         self.image_manager = image_manager
-        self.setWindowTitle("Scansiona Programmi Installati")
+        self.setWindowTitle("Scan Installed Programs")
         self.setModal(True)
         self.setFixedSize(700, 650)
         self.setStyleSheet("""
@@ -553,7 +553,7 @@ class ProgramScanDialog(QDialog):
         layout.setSpacing(15)
         layout.setContentsMargins(30, 30, 30, 30)
 
-        self.title_label = QLabel("Scansione programmi installati in corso...")
+        self.title_label = QLabel("Scanning Installed Programs in Progress...")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.title_label)
         
@@ -567,7 +567,7 @@ class ProgramScanDialog(QDialog):
         search_box = QHBoxLayout()
         search_box.addWidget(QLabel("🔍"))
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Filtra per nome...")
+        self.search_input.setPlaceholderText("Filter by Name...")
         self.search_input.textChanged.connect(self.filter_list)
         search_box.addWidget(self.search_input)
         layout.addLayout(search_box)
@@ -576,16 +576,16 @@ class ProgramScanDialog(QDialog):
         self.list_widget.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
         layout.addWidget(self.list_widget)
 
-        self.info_label = QLabel("Seleziona i programmi da aggiungere (Ctrl/Shift per multipli)")
+        self.info_label = QLabel("Select which programs to add (Ctrl/Shift for multiple)")
         self.info_label.setStyleSheet("color: #aaa; font-size: 13px;")
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.info_label)
 
         btn_layout = QHBoxLayout()
-        self.add_btn = QPushButton("Aggiungi Selezionati")
+        self.add_btn = QPushButton("Add selected")
         self.add_btn.setEnabled(False)
         self.add_btn.clicked.connect(self.accept)
-        self.cancel_btn = QPushButton("Annulla")
+        self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.clicked.connect(self.reject)
         btn_layout.addWidget(self.add_btn)
         btn_layout.addWidget(self.cancel_btn)
@@ -606,10 +606,10 @@ class ProgramScanDialog(QDialog):
         item = QListWidgetItem(f"📦 {data['name']}")
         item.setData(Qt.ItemDataRole.UserRole, data)
         self.list_widget.addItem(item)
-        self.title_label.setText(f"Trovati {self.list_widget.count()} programmi")
+        self.title_label.setText(f"Found {self.list_widget.count()} programs")
 
     def scan_done(self):
-        self.title_label.setText(f"Scansione completata — Trovati {self.list_widget.count()} programmi")
+        self.title_label.setText(f"Scan completed — Found {self.list_widget.count()} programs")
         self.progress_label.setText("")
         self.list_widget.sortItems(Qt.SortOrder.AscendingOrder)
     
@@ -624,7 +624,7 @@ class ProgramScanDialog(QDialog):
     def update_add_button(self):
         selected = len(self.list_widget.selectedItems())
         self.add_btn.setEnabled(selected > 0)
-        self.info_label.setText(f"{selected} selezionati" if selected > 0 else "Seleziona i programmi da aggiungere")
+        self.info_label.setText(f"{selected} selected" if selected > 0 else "Select the programs to add")
 
     def get_selected(self):
         return [item.data(Qt.ItemDataRole.UserRole) for item in self.list_widget.selectedItems()]
@@ -655,7 +655,7 @@ class DownloadWorker(QThread):
         
         total = len(to_download)
         if total == 0:
-            self.progress_update.emit("Programmi già presenti.", 100)
+            self.progress_update.emit("Programs already present.", 100)
             self.finished.emit()
             return
 
@@ -664,7 +664,7 @@ class DownloadWorker(QThread):
                 break
             
             percent = int((i + 1) / total * 100)
-            self.progress_update.emit(f"Scaricando per: {prog['name']}...", percent)
+            self.progress_update.emit(f"Downloading: {prog['name']}...", percent)
             
             # Scarica immagine 16:9 (se API key c'è)
             if self.image_manager.api_key and REQUESTS_AVAILABLE:
@@ -675,15 +675,15 @@ class DownloadWorker(QThread):
             self.app_ready.emit(prog) # Invia l'app al thread principale
         
         if self.is_running:
-            self.progress_update.emit("Completato!", 100)
+            self.progress_update.emit("Completated!", 100)
         else:
-            self.progress_update.emit("Annullato.", 100)
+            self.progress_update.emit("Cancel.", 100)
             
         self.finished.emit()
 
     def stop(self):
         """Ferma il worker in modo sicuro"""
-        print("Richiesta interruzione worker")
+        print("Worker Interruption Requested")
         self.is_running = False
 
 
@@ -1709,17 +1709,17 @@ class TVLauncher(QMainWindow):
                 if new_key:
                     QMessageBox.information(
                         self,
-                        "API Key Salvata",
-                        "✅ API Key salvata con successo!\n\n"
-                        "Ora puoi scaricare le immagini 16:9\n"
-                        "quando aggiungi nuove app al launcher."
+                        "API Key Saved",
+                        "✅ API Key successfully saved!\n\n"
+                        "Now you can download the 16:9 images\n"
+                        "when you add a new app into the launcher."
                     )
                 else:
                     QMessageBox.information(
                         self,
-                        "API Key Rimossa",
-                        "API Key rimossa. Il launcher userà solo\n"
-                        "le immagini locali e le icone degli exe."
+                        "API Key Removed",
+                        "API Key removed. The Launcher will use only\n"
+                        "local images and exe icons."
                     )
         
         self.setFocus()
@@ -2029,9 +2029,9 @@ class TVLauncher(QMainWindow):
 
             # --- NUOVA GESTIONE THREAD ---
             self.added_count = 0 # Resetta il contatore
-            self.progress_dialog = QProgressDialog("Ricerca immagini in corso...", "Annulla", 0, 100, self)
+            self.progress_dialog = QProgressDialog("Image Searching in progress...", "Cancel", 0, 100, self)
             self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-            self.progress_dialog.setWindowTitle("Aggiunta Programmi")
+            self.progress_dialog.setWindowTitle("Adding programs")
             self.progress_dialog.setFixedSize(self.scaling.scale(450), self.scaling.scale(150))
             self.progress_dialog.setValue(0)
             
@@ -2109,9 +2109,9 @@ class TVLauncher(QMainWindow):
         # Mostra messaggio solo se il worker non è stato annullato
         if self.download_worker and self.download_worker.is_running:
             if self.added_count > 0:
-                QMessageBox.information(self, "Fatto!", f"Aggiunti {self.added_count} programma(i) con successo!")
+                QMessageBox.information(self, "Done!", f"Added {self.added_count} program(s) successfully!")
             else:
-                QMessageBox.information(self, "Info", "Nessun nuovo programma aggiunto (potrebbero essere già presenti).")
+                QMessageBox.information(self, "Info", "No new program added (may be already present).")
 
         self.download_worker = None # Pulisci il riferimento al worker
         self.added_count = 0 # Resetta contatore
@@ -2131,14 +2131,14 @@ class TVLauncher(QMainWindow):
                 # Per ottimizzare anche questo, servirebbe un worker separato
                 # per la singola app. Per ora rimane così.
                 if (not app_data['icon'] or app_data['icon'] == app_data['path']) and self.image_manager.api_key and REQUESTS_AVAILABLE:
-                    print(f"📥 Cercando immagine per: {app_data['name']}")
+                    print(f"📥 Searching image for: {app_data['name']}")
                     
                     image_result = self.image_manager.get_app_image(app_data['name'], app_data['path'])
                     if image_result:
                         app_data['icon'] = image_result
-                        print(f"✅ Immagine trovata per: {app_data['name']}")
+                        print(f"✅ Image found: {app_data['name']}")
                     else:
-                        print(f"⚠️ Nessuna immagine trovata, uso icona exe")
+                        print(f"⚠️ No image found, using exe icon")
                 
                 self.apps.append(app_data)
                 self.save_config()
@@ -2350,7 +2350,7 @@ def main():
     if Path(icon_path).exists():
         app.setWindowIcon(QIcon(icon_path))
     else:
-        print(f"Warning: Icona app non trovata in {icon_path}")
+        print(f"Warning: App icon not found in {icon_path}")
         
     launcher = TVLauncher()
     launcher.show()
