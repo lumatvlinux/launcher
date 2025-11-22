@@ -17,10 +17,12 @@ A sleek, console-style application launcher for Windows with gamepad support and
 
 ## 📸 Screenshots
 
-![Main Interface](screenshot-main.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/156b6e42-53de-4d20-8b98-ee90e8fbdf37" />
+
+
 *Carousel view with cover art*
 
-![Program Scanner](screenshot-scanner.png)
+<img width="1920" height="1080" alt="Screenshot (253)" src="https://github.com/user-attachments/assets/04a30c38-4fbd-4d2d-af49-531c598e96af" />
 *Automatic program detection*
 
 ## 🔧 Requirements
