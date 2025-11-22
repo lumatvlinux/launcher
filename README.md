@@ -2,7 +2,7 @@
 
 A sleek, console-style application launcher for Windows with gamepad support and automatic image fetching.
 
-![TV Launcher](https://img.shields.io/badge/platform-Windows-blue) ![Python](https://img.shields.io/badge/python-3.8+-green) ![License](https://img.shields.io/badge/license-MIT-orange)
+![TV Launcher](https://img.shields.io/badge/platform-Windows-blue) ![Linux](https://img.shields.io/badge/platform-Linux-orange) ![Python](https://img.shields.io/badge/python-3.8+-green) ![License](https://img.shields.io/badge/license-MIT-orange)
 
 ## ✨ Features
 
