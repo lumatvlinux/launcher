@@ -1,49 +1,86 @@
 # 🎮 TV Launcher
 
-A sleek, console-style application launcher for Windows and Linux with gamepad support and automatic image fetching.
+A sleek, console-style application launcher for Windows and Linux with gamepad support, automatic image fetching, and powerful organization features.
 
-![TV Launcher](https://img.shields.io/badge/platform-Windows-blue) ![Linux](https://img.shields.io/badge/platform-Linux-orange) ![Python](https://img.shields.io/badge/python-3.8+-green) ![License](https://img.shields.io/badge/license-MIT-orange)
+![TV Launcher](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue)
+![Python](https://img.shields.io/badge/Python-3.8%2B-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ## ✨ Features
 
-- **🎨 Beautiful TV-Mode Interface** - Full-screen carousel with smooth animations
-- **🎮 Gamepad Support** - Navigate with Xbox/PlayStation controllers or keyboard/Bluetooth TV Remotes
-- **🖼️ Automatic Image Downloads** - Fetches 16:9 cover art from SteamGridDB
-- **📱 Responsive Scaling** - Adapts to any screen resolution
-- **🔍 Smart Program Scanner** - Automatically detects installed applications
-- **⚡ Quick Launch** - Launch apps with Enter/A button
-- **🎯 System Controls** - Built-in restart/shutdown options
-- **🌄 Custom Backgrounds** - Personalize with your own images
+### 🎨 Beautiful Interface
+- **Full-screen TV-Mode** - Console-style carousel with smooth animations
+- **Responsive Scaling** - Automatically adapts to any screen resolution (from 720p to 4K+)
+- **Custom Backgrounds** - Personalize with your own wallpapers
+- **Real-time Clock** - Displays current time and date
 
-## 📸 Screenshots
+ ## 📸 Screenshots
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e89a267a-052b-4df8-b546-3f12bff375a5" />
-
+<img width="1920" height="1080" alt="Screenshot (267)" src="https://github.com/user-attachments/assets/ecaa5f5e-57c2-42e8-b52b-8c598f764541" />
 *Carousel view with cover art*
 
-<img width="1920" height="1080" alt="Screenshot (253)" src="https://github.com/user-attachments/assets/1f9e19e3-02c9-476a-ab00-cafe8daadae9" />
 
+
+<img width="1920" height="1080" alt="Screenshot (268)" src="https://github.com/user-attachments/assets/0ee987cb-a63f-4040-a61e-1e22719869dc" />
+*NEW: Quick Search feature*
+
+
+<img width="1920" height="1080" alt="Screenshot (269)" src="https://github.com/user-attachments/assets/19343c2d-14bd-4e16-8038-358816349abd" />
+*NEW: Reorder mode with visual indicators*
+
+
+<img width="1920" height="1080" alt="Screenshot (270)" src="https://github.com/user-attachments/assets/85fc341a-64b0-4ce5-b0ca-9936f44ea5fd" />
 *Automatic program detection*
 
 
-https://github.com/user-attachments/assets/4dd6d86f-5606-47bd-aee5-2ff5c0afc82d
+
+https://github.com/user-attachments/assets/1aac1d16-857c-4944-a14c-03bfd4be57cc 
 
 *In motion*
 
 
 
+### 🎮 Input Support
+- **Gamepad Compatible** - Xbox, PlayStation, or any standard controller
+- **Keyboard Navigation** - Full keyboard support
+- **TV Remote Support** - Works with Bluetooth TV remotes
+- **Auto-detection** - Automatically detects connected gamepads
 
+### 🔍 Smart Organization
+- **Quick Search** (NEW!) - Press `F` or `LB` to instantly search your apps
+  - Live filtering as you type
+  - Alphabetically sorted results
+  - Two modes: Typing & Navigation
+  - Keyboard and gamepad support
+- **Drag & Drop Reordering** (NEW!) - Press `R` or `RB` to rearrange apps
+  - Press `Enter`/`A` to activate reorder mode
+  - Visual position indicators
+  - Supports both linear and circular navigation
+- **Smart Program Scanner** - Automatically detects installed applications
+- **Edit & Delete** - Manage your app library easily
+
+### 🖼️ Automatic Image Management
+- **SteamGridDB Integration** - Auto-downloads 16:9 cover art
+- **Local Image Support** - Use your own custom images
+- **Smart Fallback** - Uses exe icons if images unavailable
+- **Optimized Loading** - Cached pixmaps for smooth performance
+
+### ⚡ System Controls
+- **Quick Actions** - Restart, Sleep, Shutdown, or Close launcher
+- **Process Monitoring** - Auto-detects when launched apps close
+- **Input Management** - Automatically disables controls when app is running
 
 ## 🔧 Requirements
 
-- **Windows** 10/11 or **Linux** (Ubuntu 20.04+, Fedora, Arch, etc.)
-- **Python** 3.8 or higher
-- **Dependencies**:
-  - PyQt6
-  - psutil
-  - pygame (optional, for gamepad support)
-  - requests (optional, for automatic image downloads)
-  - pywin32 (Windows only, for shortcut scanning)
+- **Operating System:** Windows 10/11 or Linux (Ubuntu 20.04+, Fedora, Arch, etc.)
+- **Python:** 3.8 or higher
+
+### Dependencies
+- `PyQt6` - UI framework
+- `psutil` - Process management
+- `pygame` (optional) - Gamepad support
+- `requests` (optional) - Automatic image downloads
+- `pywin32` (Windows only) - Shortcut scanning
 
 ## 📦 Installation
 
@@ -77,15 +114,13 @@ sudo pacman -S python-pyqt6 python-pip
 pip install -r requirements.txt
 ```
 
-
-
 ### 3. Run the Launcher
 
 **Windows:**
 ```bash
 python TvLauncher_Windows.py
+# or use the included .bat file for easier startup
 ```
-bat file included for easier startup
 
 **Linux:**
 ```bash
@@ -94,71 +129,99 @@ python3 TvLauncher_Linux.py
 chmod +x TvLauncher_Linux.py
 ./TvLauncher_Linux.py
 ```
-you can easly edit the included .desktop file to run the launcher
 
-## 🎮 Usage
+## 🎮 Controls
 
 ### Keyboard Controls
-- **Arrow Keys** - Navigate carousel and menus
-- **Enter** - Launch selected app
-- **E** - Edit current app
-- **Delete** - Remove current app
-- **Escape** - Exit launcher or cancel menu
-- **Up/Down** - Access system menu
+| Key | Action |
+|-----|--------|
+| `←` `→` | Navigate carousel |
+| `↑` `↓` | Navigate menus / system controls |
+| `Enter` | Launch app |
+| **`F`** | **Open Quick Search (NEW!)** |
+| **`R`** | **Toggle Reorder Mode (NEW!)** |
+| `E` | Edit current app |
+| `Delete` | Remove current app |
+| `Tab` | Switch search mode (when searching) |
+| `Esc` | Exit launcher / Cancel / Close search |
 
 ### Gamepad Controls
-- **D-Pad/Left Stick** - Navigate
-- **A Button** - Launch app
-- **B Button** - Back/Cancel
-- **X Button** - Edit app
-- **Y Button** - Delete app
-- **Start Button** - Toggle system menu
+| Button | Action |
+|--------|--------|
+| D-Pad / Left Stick | Navigate |
+| `A` | Launch app / Confirm |
+| `B` | Back / Cancel |
+| `X` | Edit app / Switch mode (in search) |
+| `Y` | Delete app |
+| **`LB`** | **Open Quick Search (NEW!)** |
+| **`RB`** | **Toggle Reorder Mode (NEW!)** |
+
+## 🚀 Quick Start Guide
 
 ### First Time Setup
 
 1. **Add Your First App**
    - Click the `+` icon in the top-right
    - Browse for the executable
-   - Optionally add a custom image
    - Insert the API Key Before adding any program for auto-download to work
+   - Optionally add a custom image
    - Click "Add"
 
-2. **Scan Installed Programs**
-   - Click the 🔍 icon
-   - Wait for the scan to complete
-   - Select programs to add
-   - Click "Add Selected"
-
-3. **Set Up SteamGridDB (Optional)**
-   - Click the 🔑 icon
+2. **Set Up SteamGridDB (Recommended)**
+   - Click the `🔑` icon
    - Get a free API key from [SteamGridDB](https://www.steamgriddb.com/profile/preferences/api)
    - Paste it in the dialog
    - The launcher will now auto-download 16:9 cover art
 
+3. **Scan Installed Programs**
+   - Click the `🔍` icon
+   - Wait for the scan to complete (may take a minute)
+   - Select programs to add
+   - Click "Add Selected"
+   - Images download automatically in background
+
 4. **Customize Background**
-   - Click the 🖼️ icon
-   - Select an image file
-   - The background updates immediately
+   - Click the `🖼️` icon
+   - Select an image file (16:9 recommended)
+   - Background updates immediately
+
+### NEW: Using Quick Search
+
+1. Press `F` (keyboard) or `LB` (gamepad) anywhere
+2. Start typing to filter apps (Typing Mode)
+3. Use `↑`/`↓` or D-Pad to navigate results (auto-switches to Navigation Mode)
+4. Press `Tab` or `X` to manually switch modes
+5. Press `Enter` or `A` to launch selected app
+6. Press `Esc` or `B` to close search
+
+### NEW: Reordering Apps
+
+**Method 1: Quick Toggle**
+1. Press `R` (keyboard) or `RB` (gamepad)
+2. Use `←`/`→` to move the app to desired position
+3. Press `Enter`/`A` to confirm or `Esc`/`B` to cancel
+
+ **Features:**
+- Gold border shows selected app
+- Blue border shows target position
+- Position numbers appear on each tile
+- Works with both linear (≤5 apps) and circular (>5 apps) modes
+- Instructions overlay appears when active
 
 ## 🚀 Autostart Setup
 
 ### Windows Autostart
 
-TV Launcher can start automatically when Windows boots using either of these methods:
-
-#### Method 1: Startup Folder (Recommended)
-
-1. Press **Win + R** to open Run dialog
+**Method 1: Startup Folder (Recommended)**
+1. Press `Win + R` to open Run dialog
 2. Type `shell:startup` and press Enter
-3. Right-click your launcher `.bat` file → **Create shortcut**
-4. Drag the shortcut into the Startup folder that opened
+3. Right-click your launcher `.bat` file → Create shortcut
+4. Drag the shortcut into the Startup folder
+5. ✅ Launcher will start automatically after login
 
-The launcher will now start automatically after login.
+💡 **Tip:** Right-click shortcut → Properties → Set Run: `Minimized` to hide console window.
 
-**💡 Tip:** Right-click the shortcut → **Properties** → Set **Run: Minimized** to hide the console window on startup.
-
-#### Method 2: Windows Registry
-
+**Method 2: Windows Registry**
 1. Create a file named `TVLauncher_Autostart.reg`
 2. Paste the following content:
 ```reg
@@ -167,29 +230,25 @@ Windows Registry Editor Version 5.00
 [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run]
 "TVLauncher"="\"C:\\path\\to\\launch.bat\""
 ```
-
 3. Replace `C:\\path\\to\\launch.bat` with your actual path
 4. Double-click the `.reg` file to add the registry entry
-
-The launcher will now start automatically on every boot.
+5. ✅ Launcher will start automatically on every boot
 
 ### Linux Autostart
 
-TV Launcher works with any Linux desktop environment (XFCE, GNOME, KDE, Cinnamon, MATE, etc.) using autostart desktop entries.
+Works with any desktop environment (XFCE, GNOME, KDE, Cinnamon, MATE, etc.)
 
-#### Setup Instructions
-
-1. **Create the autostart directory** (if it doesn't exist):
+1. **Create autostart directory:**
 ```bash
 mkdir -p ~/.config/autostart
 ```
 
-2. **Create the autostart file**:
+2. **Create autostart file:**
 ```bash
 nano ~/.config/autostart/TVLauncher.desktop
 ```
 
-3. **Add the following content**:
+3. **Add this content:**
 ```ini
 [Desktop Entry]
 Type=Application
@@ -200,26 +259,24 @@ Path=/path/to/
 Terminal=false
 X-GNOME-Autostart-enabled=true
 ```
+*Replace `/path/to/` with actual directory*
 
-4. **Replace `/path/to/`** with the actual directory where TvLauncher_Linux.py is located
-
-5. **Make the file executable**:
+4. **Make executable:**
 ```bash
 chmod +x ~/.config/autostart/TVLauncher.desktop
 ```
 
-#### Using a Virtual Environment?
-
-If you run the launcher from a Python virtual environment, change the `Exec` line to:
+**Using Virtual Environment?** Change the `Exec` line to:
 ```ini
 Exec=/path/to/venv/bin/python /path/to/TvLauncher_Linux.py
 ```
 
-The launcher will now automatically start on login. ✅
+✅ Launcher will now start automatically on login.
 
 ## ⚙️ Configuration
 
 Configuration is stored in `launcher_apps.json`:
+
 ```json
 {
   "apps": [
@@ -235,65 +292,84 @@ Configuration is stored in `launcher_apps.json`:
 ```
 
 ### Image Organization
-Images are stored in `assets/APP_NAME/banner.png` with automatic fallback to `.jpg`, `.jpeg`, or `.webp`.
+Images are stored in `assets/APP_NAME/banner.{png|jpg|jpeg|webp}` with automatic fallback.
 
 ## 📁 Project Structure
+
 ```
 tv-launcher/
-├── tvlauncher.py          # Main application
-├── launcher_apps.json     # Configuration (auto-generated)
-├── requirements.txt       # Python dependencies
-├── assets/               # Image storage
-│   ├── icons/           # UI icons
+├── TvLauncher_Windows.py     # Main application (Windows)
+├── TvLauncher_Linux.py        # Main application (Linux)
+├── modules/
+│   ├── app_reorder.py        # NEW: Reordering functionality
+│   └── search_widget.py       # NEW: Quick search widget
+├── launcher_apps.json         # Configuration (auto-generated)
+├── requirements.txt           # Python dependencies
+├── assets/
+│   ├── icons/                 # UI icons
 │   │   ├── key.png
 │   │   ├── search.png
 │   │   ├── plus.png
 │   │   ├── image.png
 │   │   └── logo48.png
-│   └── [app_name]/      # Per-app folders
-│       └── banner.png   # 16:9 cover art
+│   └── [app_name]/            # Per-app folders
+│       └── banner.png         # 16:9 cover art
 └── README.md
 ```
 
 ## 🛠️ Troubleshooting
 
 ### Gamepad Not Detected
-- Ensure pygame is installed: `pip install pygame`
+- Ensure `pygame` is installed: `pip install pygame`
 - Connect gamepad before launching
-- The launcher auto-detects gamepads every 5 seconds
-- **Linux**: Ensure your user has permission to access `/dev/input/` devices
-```bash
+- Launcher auto-detects gamepads every 5 seconds
+- **Linux:** Ensure user has permission to access `/dev/input/`:
+  ```bash
   sudo usermod -a -G input $USER
-  # Log out and back in for changes to take effect
-```
+  # Log out and back in
+  ```
 
 ### Images Not Downloading
-- Verify requests is installed: `pip install requests`
-- Check your SteamGridDB API key is valid
+- Verify `requests` is installed: `pip install requests`
+- Check SteamGridDB API key is valid
 - Ensure internet connection is active
+- Images download in background thread (check console for errors)
 
 ### App Won't Launch
-- Verify the executable path is correct
+- Verify executable path is correct
 - Check file permissions
-- **Windows**: Try running as administrator
-- **Linux**: Ensure the binary has execute permissions (`chmod +x`)
+- **Windows:** Try running as administrator
+- **Linux:** Ensure binary has execute permissions (`chmod +x`)
+
+### Search Not Working
+- Check that `modules/search_widget.py` exists
+- Try pressing `F` or `LB` to open search
+- If search is stuck, press `Esc` to close and retry
+
+### Reorder Mode Not Activating
+- Try pressing `R` or `RB` to toggle
+- Cannot activate during menu, dialogs, or when no apps exist
 
 ### Scaling Issues
-- The launcher auto-scales to your resolution
-- Base resolution is 1920x1080
+- Launcher auto-scales to your resolution
+- Base resolution: 1920x1080
 - All UI elements scale proportionally
-- **Linux**: If using Wayland, some scaling issues may occur. Try X11 session.
+- **Linux/Wayland:** Some scaling issues may occur, try X11 session
 
 ### Linux-Specific Issues
 
 **Missing Qt Platform Plugin:**
 ```bash
-# Install Qt platform plugins
 # Ubuntu/Debian:
 sudo apt-get install qt6-qpa-plugins
 
 # Fedora:
 sudo dnf install qt6-qtbase-gui
+```
+
+**Permission Denied:**
+```bash
+chmod +x TvLauncher_Linux.py
 ```
 
 ## 📝 License
@@ -305,11 +381,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [SteamGridDB](https://www.steamgriddb.com/) - For providing game artwork API
 - [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - For the UI framework
 - [pygame](https://www.pygame.org/) - For gamepad support
+- Community contributors and testers
 
 ## 🐛 Known Issues
 
-- **Windows**: Some executables may need administrator privileges
-- **All**: Background images should be high resolution for best results
-- **Linux/Wayland**: Some scaling issues may occur, X11 recommended
+- **Windows:** Some executables may need administrator privileges
+- **All:** Background images should be high resolution (1920x1080+) for best results
+- **Linux/Wayland:** Some scaling issues may occur, X11 recommended
+- **Reorder Mode:** Cannot be activated while dialogs or menus are open (by design)
 
-**Star ⭐ this repo if you find it useful!**
+## 📧 Contact
+
+For issues, questions, or suggestions, please open an issue on GitHub.
+
+---
+
+⭐ **Star this repo if you find it useful!**
+
+Made with ❤️ by Darkvinx88
