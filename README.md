@@ -12,7 +12,14 @@ A sleek, console-style application launcher for Windows and Linux with gamepad s
 - **Full-screen TV-Mode** - Console-style carousel with smooth animations
 - **Responsive Scaling** - Automatically adapts to any screen resolution (from 720p to 4K+)
 - **Custom Backgrounds** - Personalize with your own wallpapers
-- **Real-time Clock** - Displays current time and date
+- **Locale Adaptive Clock** - Displays current time and date
+- **Gamepad Support** - Navigate with Xbox/PlayStation controllers or keyboard/Bluetooth TV Remotes
+- **Automatic Image Downloads** - Fetches 16:9 cover art from SteamGridDB
+- **Smart Program Scanner** - Automatically detects installed applications
+- **Quick Search Widget** - Instant app filtering with f/LB
+- **Drag & Drop Reordering** - Reorganize apps with r/RB
+- **System Controls** - Built-in restart/shutdown/Sleep options
+
 
  ## 📸 Screenshots
 
