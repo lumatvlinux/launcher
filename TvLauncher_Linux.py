@@ -18,6 +18,9 @@ from PyQt6.QtCore import (
 from PyQt6.QtGui import QPixmap, QFont, QKeyEvent, QPainter, QColor, QIcon
 import psutil
 
+from modules.app_reorder import integrate_reorder_mode
+from modules.search_widget import QuickSearchWidget
+
 # Try to import pygame for joystick support
 try:
     import pygame
@@ -726,7 +729,7 @@ class AppTile(QWidget):
         self.normal_height = self.scaling.scale(260)
         self.focused_width = self.scaling.scale(400)
         self.focused_height = self.scaling.scale(288)
-        
+       
         self.normal_img_width = self.scaling.scale(360)
         self.normal_img_height = self.scaling.scale(203)
         self.focused_img_width = self.scaling.scale(400)
@@ -1067,20 +1070,132 @@ class EditAppDialog(QDialog):
                     
                 """)
    
-    def keyPressEvent(self, event):
-        if event.isAutoRepeat():
+    def keyPressEvent(self, event: QKeyEvent):
+        # Se la ricerca è aperta, inoltra input a lei
+        if hasattr(self, 'quick_search') and self.quick_search.isVisible():
+            self.quick_search.keyPressEvent(event)
             return
+        
+        if not self.inputs_enabled:
+            return
+        
+        # Non permettere input se il dialog di progresso è attivo
+        if self.progress_dialog and self.progress_dialog.isVisible():
+            return
+        
         key = event.key()
-        if key == Qt.Key.Key_Left:
-            self.confirm_index[0] = (self.confirm_index[0] - 1) % 2
-            self.update_confirm_focus()
+        
+        # Quick Search con tasto F
+        if key == Qt.Key.Key_F:
+            self.open_quick_search()
+            return
+        
+        if event.isAutoRepeat():
+            if self.is_in_menu and key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+                return
+            if key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+                return
+        
+        if key == Qt.Key.Key_Down:
+            if not self.is_in_menu:
+                self.is_in_menu = True
+                self.menu_button_index = 0
+                self.update_menu_focus()
+        elif key == Qt.Key.Key_Up:
+            if self.is_in_menu:
+                self.is_in_menu = False
+                for action, btn in self.menu_buttons:
+                    if btn == self.shutdown_btn:
+                        btn.setStyleSheet(f"""
+                            QPushButton {{
+                                background-color: rgba(255, 255, 255, 0.1);
+                                color: rgba(255, 255, 255, 0.7);
+                                border: {self.scaling.scale(2)}px solid transparent;
+                                border-radius: {self.scaling.scale(25)}px;
+                                font-size: {self.scaling.scale_font(14)}px;
+                                font-weight: 600;
+                            }}
+                            QPushButton:hover {{ background-color: #3a3a3a; }}
+                        """)
+                    else:
+                        btn.setStyleSheet(f"""
+                            QPushButton {{
+                                background-color: rgba(255, 255, 255, 0.1);
+                                color: rgba(255, 255, 255, 0.7);
+                                border: {self.scaling.scale(2)}px solid transparent;
+                                border-radius: {self.scaling.scale(25)}px;
+                                font-size: {self.scaling.scale_font(24)}px;
+                                font-weight: 500;
+                            }}
+                            QPushButton:hover {{ background-color: #3a3a3a; }}
+                        """)
         elif key == Qt.Key.Key_Right:
-            self.confirm_index[0] = (self.confirm_index[0] + 1) % 2
-            self.update_confirm_focus()
+            if self.is_in_menu:
+                self.menu_button_index = (self.menu_button_index + 1) % len(self.menu_buttons)
+                self.update_menu_focus()
+            elif self.apps and not self.is_animating:
+                num_apps = len(self.apps)
+                if num_apps <= 5:
+                    if self.current_index < num_apps - 1:
+                        self.current_index += 1
+                        self.animate_carousel("right")
+                else:
+                    self.current_index = (self.current_index + 1) % len(self.apps)
+                    self.animate_carousel("right")
+        elif key == Qt.Key.Key_Left:
+            if self.is_in_menu:
+                self.menu_button_index = (self.menu_button_index - 1) % len(self.menu_buttons)
+                self.update_menu_focus()
+            elif self.apps and not self.is_animating:
+                num_apps = len(self.apps)
+                if num_apps <= 5:
+                    if self.current_index > 0:
+                        self.current_index -= 1
+                        self.animate_carousel("left")
+                else:
+                    self.current_index = (self.current_index - 1) % len(self.apps)
+                    self.animate_carousel("left")
         elif key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
-            self.confirm_buttons[self.confirm_index[0]].click()
+            if self.is_in_menu:
+                self.execute_menu_action()
+            elif self.apps:
+                self.launch_current_app()
+        elif key == Qt.Key.Key_Delete:
+            if not self.is_in_menu and self.apps:
+                self.remove_current_app()
+        elif key == Qt.Key.Key_E:
+            if not self.is_in_menu and self.apps:
+                self.edit_current_app()
         elif key == Qt.Key.Key_Escape:
-            self.reject()
+            if self.is_in_menu:
+                self.is_in_menu = False
+                for action, btn in self.menu_buttons:
+                    if btn == self.shutdown_btn:
+                        btn.setStyleSheet(f"""
+                            QPushButton {{
+                                background-color: rgba(255, 255, 255, 0.1);
+                                color: rgba(255, 255, 255, 0.7);
+                                border: {self.scaling.scale(2)}px solid transparent;
+                                border-radius: {self.scaling.scale(25)}px;
+                                font-size: {self.scaling.scale_font(14)}px;
+                                font-weight: 600;
+                            }}
+                            QPushButton:hover {{ background-color: #3a3a3a; }}
+                        """)
+                    else:
+                        btn.setStyleSheet(f"""
+                            QPushButton {{
+                                background-color: rgba(255, 255, 255, 0.1);
+                                color: rgba(255, 255, 255, 0.7);
+                                border: {self.scaling.scale(2)}px solid transparent;
+                                border-radius: {self.scaling.scale(25)}px;
+                                font-size: {self.scaling.scale_font(24)}px;
+                                font-weight: 500;
+                            }}
+                            QPushButton:hover {{ background-color: #3a3a3a; }}
+                        """)
+            else:
+                self.close()
         else:
             super().keyPressEvent(event)
    
@@ -1263,6 +1378,8 @@ class TVLauncher(QMainWindow):
         self.focus_check_timer = None
         self.inputs_enabled = True
         
+        
+        
         # === INIZIO OTTIMIZZAZIONE #2: INIT VAR WORKER ===
         self.download_worker = None
         self.progress_dialog = None
@@ -1271,6 +1388,12 @@ class TVLauncher(QMainWindow):
         
         # === SCALING SYSTEM ===
         self.scaling = ResponsiveScaling()
+
+        # Quick Search Widget (DOPO scaling!)
+
+        self.quick_search = QuickSearchWidget(self.scaling, self)
+        self.quick_search.app_selected.connect(self.on_search_app_selected)
+        self.quick_search.search_closed.connect(self.on_search_closed)
         
         if JOYSTICK_AVAILABLE:
             pygame.init()
@@ -1278,7 +1401,12 @@ class TVLauncher(QMainWindow):
         self.joystick_detection_timer = QTimer()
         self.joystick_detection_timer.timeout.connect(self.detect_joystick)
         self.joystick_detection_timer.start(5000)
+        self.normal_width = self.scaling.scale(360)
+        self.normal_height = self.scaling.scale(260)
+        self.focused_width = self.scaling.scale(400)
+        self.focused_height = self.scaling.scale(288)
         self.init_ui()
+        integrate_reorder_mode(self)
         self.build_infinite_carousel()
     
     def init_joystick(self):
@@ -1291,62 +1419,72 @@ class TVLauncher(QMainWindow):
                 self.joystick_timer = QTimer()
                 self.joystick_timer.timeout.connect(self.poll_joystick)
                 self.joystick_timer.start(12)
-            else:
-                print("No joystick detected")
+            
         except Exception as e:
             print(f"Error initializing joystick: {e}")
    
     def detect_joystick(self):
+        # SE abbiamo già un joystick e il driver risponde, NON fare nulla.
+        # Lasciamo che poll_joystick gestisca eventuali disconnessioni.
+        if self.joystick is not None:
+            return
+
         try:
-            pygame.joystick.quit()
-            pygame.joystick.init()
+            # Reinizializziamo il sottosistema solo se stiamo cercando da zero
+            if not pygame.joystick.get_init():
+                pygame.joystick.init()
+            
+            # Aggiorniamo gli eventi per vedere se ci sono nuovi device
+            pygame.event.pump() 
+
             count = pygame.joystick.get_count()
             if count > 0:
-                if self.joystick is not None:
-                    try:
-                        self.joystick.quit()
-                    except:
-                        pass
                 self.joystick = pygame.joystick.Joystick(0)
                 self.joystick.init()
                 print(f"🎮 Joystick connected: {self.joystick.get_name()}")
+                
                 if self.joystick_timer is None:
                     self.joystick_timer = QTimer()
                     self.joystick_timer.timeout.connect(self.poll_joystick)
-                    self.joystick_timer.start(12)
+                    self.joystick_timer.start(12) # Poll frequente per reattività
                 elif not self.joystick_timer.isActive():
                     self.joystick_timer.start(12)
             else:
-                if self.joystick is not None:
-                    print("🎮 Joystick disconnected")
-                    if self.joystick_timer:
-                        self.joystick_timer.stop()
-                    try:
-                        self.joystick.quit()
-                    except:
-                        pass
-                    self.joystick = None
+                # Nessun joystick trovato, riproviamo al prossimo tick del timer (5s)
+                pass
+
         except Exception as e:
             print(f"⚠️ Error during joystick detection: {e}")
-            if self.joystick is not None:
-                print("🎮 Resetting joystick due to error")
-                if self.joystick_timer:
-                    self.joystick_timer.stop()
-                try:
-                    self.joystick.quit()
-                except:
-                    pass
-                self.joystick = None
+            self.joystick = None
    
     def poll_joystick(self):
-        if not self.joystick or not self.inputs_enabled:
+        if not self.joystick:
             return
+            
+        # Se gli input sono disabilitati (app lanciata), non processiamo ma teniamo vivo
+        if not self.inputs_enabled:
+            try:
+                pygame.event.pump()
+            except:
+                pass
+            return
+
         try:
+            # Questo è fondamentale per mantenere viva la connessione
             pygame.event.pump()
+            
+            # Verifica se il joystick è ancora attivo
+            if not pygame.joystick.get_init() or pygame.joystick.get_count() == 0:
+                raise pygame.error("Joystick system not ready or no device")
+
+            # --- Lettura Assi ---
             x_axis = self.joystick.get_axis(0)
             y_axis = self.joystick.get_axis(1)
+            
+            # ... (Il resto del codice di gestione assi rimane identico) ...
             if self.joystick.get_numhats() > 0:
                 hat = self.joystick.get_hat(0)
+                # ... (Logica Hat) ...
                 if hat != (0, 0):
                     if self.axis_cooldown > 0:
                         self.axis_cooldown -= 1
@@ -1364,24 +1502,56 @@ class TVLauncher(QMainWindow):
                 else:
                     self.last_hat = hat
                     self.axis_cooldown = 0
+
+            # ... (Logica Stick Analogico) ...
             if abs(x_axis) > self.axis_deadzone or abs(y_axis) > self.axis_deadzone:
                 self.handle_axis(x_axis, y_axis)
             else:
                 self.axis_cooldown = 0
                 self.last_axis_state = {'x': 0, 'y': 0}
+
+            # --- Lettura Bottoni ---
             for i in range(self.joystick.get_numbuttons()):
                 if self.joystick.get_button(i):
                     self.handle_button(i)
-        except (pygame.error, ValueError) as e:
-            print(f"Joystick polling error, assuming disconnected: {e}")
+
+        except (pygame.error, AttributeError) as e:
+            print(f"⚠️ Joystick connection lost: {e}")
+            # Chiudiamo correttamente
+            try:
+                self.joystick.quit()
+            except:
+                pass
+            
+            # Impostiamo a None così detect_joystick inizierà a cercarlo di nuovo
+            self.joystick = None
             if self.joystick_timer:
                 self.joystick_timer.stop()
-                self.joystick_timer = None
-            self.joystick = None
+        
         except Exception as e:
             print(f"Error polling joystick: {e}")
    
     def handle_axis(self, x_axis, y_axis):
+        # Se la ricerca è aperta, gestisci navigazione
+        if hasattr(self, 'quick_search') and self.quick_search.isVisible():
+            if self.axis_cooldown > 0:
+                self.axis_cooldown -= 1
+                return
+            
+            if abs(x_axis) > self.axis_deadzone:
+                self.last_axis_state['x'] = x_axis
+            
+            if abs(y_axis) > self.axis_deadzone:
+                if y_axis > 0 and self.last_axis_state['y'] <= 0:
+                    self.quick_search.handle_joypad_input(Qt.Key.Key_Down)
+                    self.axis_cooldown = 2
+                elif y_axis < 0 and self.last_axis_state['y'] >= 0:
+                    self.quick_search.handle_joypad_input(Qt.Key.Key_Up)
+                    self.axis_cooldown = 2
+                self.last_axis_state['y'] = y_axis
+            return
+        
+        # Comportamento normale launcher
         if self.axis_cooldown > 0:
             self.axis_cooldown -= 1
             return
@@ -1403,11 +1573,30 @@ class TVLauncher(QMainWindow):
             self.last_axis_state['y'] = y_axis
    
     def handle_button(self, button_index):
+        # Se la ricerca è aperta, gestisci input specifici
+        if hasattr(self, 'quick_search') and self.quick_search.isVisible():
+            current_time = pygame.time.get_ticks()
+            if button_index in self.button_cooldown:
+                if current_time - self.button_cooldown[button_index] < 300:
+                    return
+            self.button_cooldown[button_index] = current_time
+            
+            # Mappa pulsanti per la ricerca
+            if button_index == 0:  # A
+                self.quick_search.handle_joypad_input(Qt.Key.Key_Return)
+            elif button_index == 1:  # B
+                self.quick_search.handle_joypad_input(Qt.Key.Key_Escape)
+            elif button_index == 2:  # X - Cambio modalità
+                self.quick_search.handle_joypad_input(Qt.Key.Key_E)
+            return
+        
+        # Comportamento normale launcher
         current_time = pygame.time.get_ticks()
         if button_index in self.button_cooldown:
             if current_time - self.button_cooldown[button_index] < 300:
                 return
         self.button_cooldown[button_index] = current_time
+        
         if button_index == 0:
             self.simulate_key_press(Qt.Key.Key_Return)
         elif button_index == 1:
@@ -1416,6 +1605,8 @@ class TVLauncher(QMainWindow):
             self.simulate_key_press(Qt.Key.Key_E)
         elif button_index == 3:
             self.simulate_key_press(Qt.Key.Key_Delete)
+        elif button_index in (4, 9):  # LB - Apri ricerca
+            self.simulate_key_press(Qt.Key.Key_F)
         elif button_index == 9:
             self.simulate_key_press(Qt.Key.Key_Down if not self.is_in_menu else Qt.Key.Key_Up)
    
@@ -1671,18 +1862,29 @@ class TVLauncher(QMainWindow):
         self.restart_btn.setToolTip("Restart")
         self.restart_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button_layout.addWidget(self.restart_btn)
-        self.shutdown_btn = QPushButton("OFF")
+
+        self.sleep_btn = QPushButton("☾")  # Simbolo luna
+        self.sleep_btn.setFixedSize(btn_size, btn_size)
+        self.sleep_btn.setToolTip("Sleep")
+        self.sleep_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button_layout.addWidget(self.sleep_btn)
+
+        self.shutdown_btn = QPushButton("OFF")  # Simbolo power standard
         self.shutdown_btn.setFixedSize(btn_size, btn_size)
         self.shutdown_btn.setToolTip("Shutdown")
         self.shutdown_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button_layout.addWidget(self.shutdown_btn)
+
         self.close_btn = QPushButton("✕")
         self.close_btn.setFixedSize(btn_size, btn_size)
         self.close_btn.setToolTip("Close")
         self.close_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button_layout.addWidget(self.close_btn)
+
+        # Aggiorna la lista dei pulsanti (importante per la navigazione!)
         self.menu_buttons = [
             ("restart", self.restart_btn),
+            ("sleep", self.sleep_btn),
             ("shutdown", self.shutdown_btn),
             ("close", self.close_btn)
         ]
@@ -1716,7 +1918,7 @@ class TVLauncher(QMainWindow):
         menu_layout.addStretch()
         main_layout.addWidget(menu_container)
         
-        instructions = QLabel("Navigate: ← → ↑ ↓ or D-Pad/Stick | Launch: Enter/A | Edit: E/X | Delete: Del/Y | Exit: Esc/B")
+        instructions = QLabel("Navigate: ← → ↑ ↓ or D-Pad/Stick | Launch: Enter/A | Edit: E/X | Delete: Del/Y | Search: F/LB | Exit: Esc/B")
         instructions.setStyleSheet(f"""
             color: rgba(255, 255, 255, 0.3);
             font-size: {self.scaling.scale_font(11)}px;
@@ -1879,9 +2081,17 @@ class TVLauncher(QMainWindow):
             self.confirm_action("restart")
         elif action == "shutdown":
             self.confirm_action("shutdown")
+        elif action == "sleep":  # ← AGGIUNGI QUESTO
+            self.confirm_action("sleep")    
    
     def confirm_action(self, action):
-        action_text = "Restart" if action == "restart" else "Shutdown"
+        action_text = {
+        "restart": "Restart",
+        "shutdown": "Shutdown",
+        "sleep": "Suspend"
+        }.get(action, action.capitalize())
+    
+        confirm_dialog = QDialog(self)
         confirm_dialog = QDialog(self)
         confirm_dialog.setWindowTitle(f"Confirm {action_text}")
         confirm_dialog.setModal(True)
@@ -1895,7 +2105,7 @@ class TVLauncher(QMainWindow):
         layout = QVBoxLayout()
         layout.setSpacing(20)
         layout.setContentsMargins(30, 30, 30, 30)
-        message = QLabel(f"Are you sure you want to {action.lower()} the computer?")
+        message = QLabel(f"Are you sure you want to {action_text.lower()} the computer?")
         message.setAlignment(Qt.AlignmentFlag.AlignCenter)
         message.setWordWrap(True)
         layout.addWidget(message)
@@ -1963,21 +2173,42 @@ class TVLauncher(QMainWindow):
             self.execute_power_action(action)
    
     def execute_power_action(self, action):
+        import platform
+        system = platform.system()
+
         try:
-            if IS_LINUX:
-                if action == "restart":
-                    subprocess.run(["systemctl", "reboot"], check=True)
-                elif action == "shutdown":
-                    subprocess.run(["systemctl", "poweroff"], check=True)
-            elif IS_WINDOWS:
+            if system == "Windows":
                 if action == "restart":
                     subprocess.run(["shutdown", "/r", "/t", "0"], shell=True)
                 elif action == "shutdown":
                     subprocess.run(["shutdown", "/s", "/t", "0"], shell=True)
+                elif action == "sleep":
+                    # Windows: sospensione ibrida (più veloce del semplice sleep)
+                    subprocess.run(["rundll32.exe", "powrprof.dll,SetSuspendState", "0,1,0"], shell=True)
+
+            elif system == "Linux":
+                if action == "restart":
+                    # systemd (99% delle distro moderne)
+                    subprocess.run(["systemctl", "reboot"], check=False)
+                    # fallback per sistemi senza systemd
+                    subprocess.run(["reboot"], check=False)
+
+                elif action == "shutdown":
+                    subprocess.run(["systemctl", "poweroff"], check=False)
+                    subprocess.run(["shutdown", "-h", "now"], check=False)
+
+                elif action == "sleep":
+                    # Metodo universale su Linux con systemd (funziona ovunque)
+                    subprocess.run(["systemctl", "suspend"], check=True)
+
+            
+
         except subprocess.CalledProcessError as e:
-            QMessageBox.critical(self, "Error", f"Could not {action}:\n{str(e)}\n\nYou may need to run with sudo/admin privileges.")
+            QMessageBox.critical(self, "Errore", f"Comando fallito. Sei loggato con privilegi sufficienti?")
+        except FileNotFoundError:
+            QMessageBox.critical(self, "Errore", f"Comando non trovato. Stai usando {system}?")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Could not {action}:\n{str(e)}")
+            QMessageBox.critical(self, "Errore", f"Impossibile eseguire {action}:\n{str(e)}")
    
     def build_infinite_carousel(self):
         for tile in self.tiles:
@@ -1992,16 +2223,27 @@ class TVLauncher(QMainWindow):
         if self.current_index >= len(self.apps):
             self.current_index = 0
         num_apps = len(self.apps)
-        center_tile_index = 4
         
-        for i in range(self.max_visible_tiles):
-            app_offset = i - center_tile_index
-            app_idx = (self.current_index + app_offset) % num_apps
-            tile = AppTile(self.apps[app_idx], self.scaling, self.carousel_container)
-            tile.app_index = app_idx
-            is_focused = (i == center_tile_index)
-            tile.set_focused(is_focused)
-            self.tiles.append(tile)
+        # Se ci sono 5 o meno app, mostra solo quelle senza ripetizioni
+        if num_apps <= 5:
+            for i in range(num_apps):
+                tile = AppTile(self.apps[i], self.scaling, self.carousel_container)
+                tile.app_index = i
+                is_focused = (i == self.current_index)
+                tile.set_focused(is_focused)
+                self.tiles.append(tile)
+        else:
+            # MODIFICATO: center_tile_index ora è 0 (sinistra) invece di 4 (centro)
+            center_tile_index = 0
+            for i in range(self.max_visible_tiles):
+                app_offset = i - center_tile_index
+                app_idx = (self.current_index + app_offset) % num_apps
+                tile = AppTile(self.apps[app_idx], self.scaling, self.carousel_container)
+                tile.app_index = app_idx
+                is_focused = (i == center_tile_index)
+                tile.set_focused(is_focused)
+                self.tiles.append(tile)
+        
         self._position_all_tiles()
         for tile in self.tiles:
             tile.show()
@@ -2010,30 +2252,77 @@ class TVLauncher(QMainWindow):
     def _position_all_tiles(self):
         if not self.tiles:
             return
-        center_tile_index = 4
-        left_width = 0
-        for i in range(center_tile_index):
-            left_width += self.tiles[i].width() + self.tile_spacing
         
-        carousel_center_x = self.carousel_container.width() // 2
-        center_tile_center_x = self.tiles[center_tile_index].width() // 2
+        num_apps = len(self.apps)
         
-        # --- INIZIO FIX ---
-        # Ripristina il calcolo originale con l'offset per correggere la posizione
-        # (usiamo self.scaling.scale(30) per la responsività)
-        start_x = carousel_center_x - center_tile_center_x - left_width - self.tile_spacing - self.scaling.scale(30)
-        # --- FINE FIX ---
-        
-        x_pos = int(start_x)
-        for i, tile in enumerate(self.tiles):
-            tile.move(int(x_pos), 0)
-            x_pos += tile.width() + self.tile_spacing
+        # Con 5 o meno app, allinea a sinistra con la focused per prima
+        if num_apps <= 5:
+            # MODIFICATO: Inizia dal margine sinistro invece del centro
+            start_x = self.scaling.scale(5)  # Margine sinistro
+            
+            x_pos = int(start_x)
+            for i, tile in enumerate(self.tiles):
+                tile.move(int(x_pos), 0)
+                # Usa la larghezza effettiva della tile (normale o focused)
+                if i == self.current_index:
+                    x_pos += self.focused_width + self.tile_spacing
+                else:
+                    x_pos += self.normal_width + self.tile_spacing
+        else:
+            # MODIFICATO: Usa la logica originale ma adattata per left alignment
+            center_tile_index = 0
+            
+            # Posizione iniziale: margine sinistro
+            start_x = self.scaling.scale(5)
+            
+            x_pos = int(start_x)
+            for i, tile in enumerate(self.tiles):
+                tile.move(int(x_pos), 0)
+                x_pos += tile.width() + self.tile_spacing
+
+
    
     def animate_carousel(self, direction):
         if self.is_animating or not self.tiles:
             return
+        
+        num_apps = len(self.apps)
+        
+        # Con 5 o meno app: solo cambio focus e riposizionamento
+        if num_apps <= 5:
+            for i, tile in enumerate(self.tiles):
+                tile.set_focused(i == self.current_index)
+            self._position_all_tiles()  # Riposiziona dopo il cambio di dimensione
+            return  # ESCE QUI, non chiama reposition_tiles
+        
+        # Comportamento per molte app
         self.is_animating = True
         shift_distance = self.tile_width + self.tile_spacing
+        
+        # CRITICAL: When moving left, we need to add the new tile BEFORE animation
+        if direction == "left":
+            # Pre-add the tile that will come from the left
+            # We need to reuse the rightmost tile (last in array)
+            last_tile = self.tiles[-1]  # Get reference but don't remove yet
+            new_app_idx = self.current_index % num_apps
+            last_tile.app_data = self.apps[new_app_idx]
+            last_tile.app_index = new_app_idx
+            
+            # Invalida cache pixmap
+            last_tile._normal_pixmap = None
+            last_tile._focused_pixmap = None
+            
+            last_tile.name_label.setText(self.apps[new_app_idx]['name'])
+            last_tile.set_focused(False)
+            
+            # Position it OFF-SCREEN to the left BEFORE moving it
+            start_x = self.scaling.scale(50)
+            last_tile.move(int(start_x - shift_distance), 0)
+            
+            # Now remove from end and insert at beginning
+            self.tiles.pop()
+            self.tiles.insert(0, last_tile)
+        
         self.animation_group = QParallelAnimationGroup()
         for tile in self.tiles:
             anim = QPropertyAnimation(tile, b"pos")
@@ -2047,48 +2336,49 @@ class TVLauncher(QMainWindow):
             anim.setStartValue(start_pos)
             anim.setEndValue(end_pos)
             self.animation_group.addAnimation(anim)
+        
         self.animation_group.finished.connect(lambda: self.reposition_tiles(direction))
         self.animation_group.start()
-   
+
     def reposition_tiles(self, direction):
+        """Riposiziona le tiles dopo l'animazione del carosello infinito"""
         num_apps = len(self.apps)
-        center_tile_index = 4
+        center_tile_index = 0  # Focus is now on the left
         
         if direction == "right":
+            # Moving right: remove leftmost tile, add new one to the right
             first_tile = self.tiles.pop(0)
-            new_app_idx = (self.current_index + 4) % num_apps
+            new_app_idx = (self.current_index + (self.max_visible_tiles - 1)) % num_apps
             first_tile.app_data = self.apps[new_app_idx]
             first_tile.app_index = new_app_idx
             
-            # === INIZIO OTTIMIZZAZIONE #1: INVALIDA CACHE ===
+            # Invalida cache pixmap
             first_tile._normal_pixmap = None
             first_tile._focused_pixmap = None
-            # === FINE OTTIMIZZAZIONE #1 ===
             
             first_tile.name_label.setText(self.apps[new_app_idx]['name'])
-            first_tile.set_focused(False) # Rigenera la cache _normal_pixmap
+            first_tile.set_focused(False)
             self.tiles.append(first_tile)
         else:
-            last_tile = self.tiles.pop()
-            new_app_idx = (self.current_index - 4) % num_apps
+            # Moving left: tile was already repositioned in animate_carousel
+            # We need to update the rightmost tile for the next scroll
+            last_tile = self.tiles[-1]
+            new_app_idx = (self.current_index + (self.max_visible_tiles - 1)) % num_apps
             last_tile.app_data = self.apps[new_app_idx]
             last_tile.app_index = new_app_idx
             
-            # === INIZIO OTTIMIZZAZIONE #1: INVALIDA CACHE ===
+            # Invalida cache pixmap
             last_tile._normal_pixmap = None
             last_tile._focused_pixmap = None
-            # === FINE OTTIMIZZAZIONE #1 ===
             
             last_tile.name_label.setText(self.apps[new_app_idx]['name'])
-            last_tile.set_focused(False) # Rigenera la cache _normal_pixmap
-            self.tiles.insert(0, last_tile)
+            last_tile.set_focused(False)
             
         for i, tile in enumerate(self.tiles):
-            tile.set_focused(i == center_tile_index) # Rigenera la cache _focused_pixmap per la tile centrale
+            tile.set_focused(i == center_tile_index)
             
         self._position_all_tiles()
         self.is_animating = False
-
     # ============================================
     # === INIZIO OTTIMIZZAZIONE #2: METODI WORKER ===
     # ============================================
@@ -2310,7 +2600,6 @@ class TVLauncher(QMainWindow):
     def keyPressEvent(self, event: QKeyEvent):
         if not self.inputs_enabled:
             return
-        
         # Non permettere input se il dialog di progresso è attivo
         if self.progress_dialog and self.progress_dialog.isVisible():
             return
@@ -2321,6 +2610,12 @@ class TVLauncher(QMainWindow):
                 return
             if key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
                 return
+
+        # --- AGGIUNGI QUESTO BLOCCO ---
+        if key in (Qt.Key.Key_F, Qt.Key.Key_Search, Qt.Key.Key_Menu, Qt.Key.Key_F3):
+            self.open_quick_search()
+            return
+        # ------------------------------        
         if key == Qt.Key.Key_Down:
             if not self.is_in_menu:
                 self.is_in_menu = True
@@ -2335,41 +2630,55 @@ class TVLauncher(QMainWindow):
                             QPushButton {{
                                 background-color: rgba(255, 255, 255, 0.1);
                                 color: rgba(255, 255, 255, 0.7);
-                                border: 2px solid transparent;
+                                border: {self.scaling.scale(2)}px solid transparent;
                                 border-radius: {self.scaling.scale(25)}px;
                                 font-size: {self.scaling.scale_font(14)}px;
                                 font-weight: 600;
                             }}
-                            QPushButton:hover {{ background-color: #3a3a3a;}}
+                            QPushButton:hover {{ background-color: #3a3a3a; }}
                         """)
                     else:
                         btn.setStyleSheet(f"""
                             QPushButton {{
                                 background-color: rgba(255, 255, 255, 0.1);
                                 color: rgba(255, 255, 255, 0.7);
-                                border: 2px solid transparent;
+                                border: {self.scaling.scale(2)}px solid transparent;
                                 border-radius: {self.scaling.scale(25)}px;
                                 font-size: {self.scaling.scale_font(24)}px;
                                 font-weight: 500;
                             }}
-                            QPushButton:hover {{ background-color: #3a3a3a;}}
+                            QPushButton:hover {{ background-color: #3a3a3a; }}
                         """)
         elif key == Qt.Key.Key_Right:
             if self.is_in_menu:
                 self.menu_button_index = (self.menu_button_index + 1) % len(self.menu_buttons)
                 self.update_menu_focus()
             elif self.apps and not self.is_animating:
-                # BUG FIX: Aggiornamento index spostato qui
-                self.current_index = (self.current_index + 1) % len(self.apps)
-                self.animate_carousel("right")
+                num_apps = len(self.apps)
+                if num_apps <= 5:
+                    # Con poche app: scorrimento lineare
+                    if self.current_index < num_apps - 1:
+                        self.current_index += 1
+                        self.animate_carousel("right")
+                else:
+                    # Con molte app: comportamento infinito ORIGINALE
+                    self.current_index = (self.current_index + 1) % len(self.apps)
+                    self.animate_carousel("right")
         elif key == Qt.Key.Key_Left:
             if self.is_in_menu:
                 self.menu_button_index = (self.menu_button_index - 1) % len(self.menu_buttons)
                 self.update_menu_focus()
             elif self.apps and not self.is_animating:
-                # BUG FIX: Aggiornamento index spostato qui
-                self.current_index = (self.current_index - 1) % len(self.apps)
-                self.animate_carousel("left")
+                num_apps = len(self.apps)
+                if num_apps <= 5:
+                    # Con poche app: scorrimento lineare
+                    if self.current_index > 0:
+                        self.current_index -= 1
+                        self.animate_carousel("left")
+                else:
+                    # Con molte app: comportamento infinito ORIGINALE
+                    self.current_index = (self.current_index - 1) % len(self.apps)
+                    self.animate_carousel("left")
         elif key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
             if self.is_in_menu:
                 self.execute_menu_action()
@@ -2390,29 +2699,52 @@ class TVLauncher(QMainWindow):
                             QPushButton {{
                                 background-color: rgba(255, 255, 255, 0.1);
                                 color: rgba(255, 255, 255, 0.7);
-                                border: 2px solid transparent;
+                                border: {self.scaling.scale(2)}px solid transparent;
                                 border-radius: {self.scaling.scale(25)}px;
                                 font-size: {self.scaling.scale_font(14)}px;
                                 font-weight: 600;
                             }}
-                            QPushButton:hover {{ background-color: #3a3a3a;}}
+                            QPushButton:hover {{ background-color: #3a3a3a; }}
                         """)
                     else:
                         btn.setStyleSheet(f"""
                             QPushButton {{
                                 background-color: rgba(255, 255, 255, 0.1);
                                 color: rgba(255, 255, 255, 0.7);
-                                border: 2px solid transparent;
+                                border: {self.scaling.scale(2)}px solid transparent;
                                 border-radius: {self.scaling.scale(25)}px;
                                 font-size: {self.scaling.scale_font(24)}px;
                                 font-weight: 500;
                             }}
-                            QPushButton:hover {{ background-color: #3a3a3a;}}
+                            QPushButton:hover {{ background-color: #3a3a3a; }}
                         """)
             else:
                 self.close()
         else:
             super().keyPressEvent(event)
+
+    def open_quick_search(self):
+        '''Apre il widget di ricerca rapida'''
+        if hasattr(self, 'quick_search'):
+            self.quick_search.set_apps(self.apps)
+            self.quick_search.show_search()
+
+    def on_search_app_selected(self, app_index):
+        """Gestisce la selezione di un'app dalla ricerca"""
+        if 0 <= app_index < len(self.apps):
+            self.current_index = app_index
+            self.build_infinite_carousel()
+
+        self.enable_inputs()
+        self.setFocus()
+        self.activateWindow()
+
+    def on_search_closed(self):
+        """Gestisce la chiusura della ricerca"""
+        self.enable_inputs()
+        self.setFocus()
+        self.activateWindow()
+
    
     def closeEvent(self, event):
         # Assicurati di fermare il worker se è in esecuzione
@@ -2431,6 +2763,49 @@ class TVLauncher(QMainWindow):
         if JOYSTICK_AVAILABLE:
             pygame.quit()
         event.accept()
+    def suspend_linux(self):
+        """Tenta di mettere il sistema operativo Linux in sospensione usando vari metodi."""
+        
+        print("Tentativo di sospensione Linux avviato...")
+        
+        methods = [
+            # Metodo 1: Systemd standard (funziona se l'utente ha i permessi via PolicyKit)
+            ["systemctl", "suspend"],
+            
+            # Metodo 2: D-Bus (metodo standard per ambienti desktop)
+            ["dbus-send", "--system", "--print-reply", 
+             "--dest=org.freedesktop.login1", 
+             "/org/freedesktop/login1", 
+             "org.freedesktop.login1.Manager.Suspend", 
+             "boolean:true"],
+            
+            # Metodo 3: Sudo Systemctl (Richiede la configurazione NOPASSWD al punto 3)
+            ["sudo", "systemctl", "suspend"],
+        ]
+
+        success = False
+        for cmd in methods:
+            try:
+                print(f"Provo comando: {' '.join(cmd)}")
+                # Usiamo subprocess.call per lanciare il comando. 
+                # Devnull nasconde l'output non necessario.
+                result = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                
+                if result == 0:
+                    print("Sospensione avviata con successo.")
+                    success = True
+                    break 
+                else:
+                    print(f"Comando fallito con codice uscita: {result}")
+            
+            except FileNotFoundError:
+                print(f"Comando {cmd[0]} non trovato sul sistema.")
+            except Exception as e:
+                print(f"Eccezione durante il comando: {e}")
+
+        if not success:
+            QMessageBox.critical(self, "Errore Sospensione", 
+                                 "Nessun metodo di sospensione ha funzionato. \nVerifica i permessi.")    
 
 def main():
     app = QApplication(sys.argv)
