@@ -18,7 +18,7 @@ A sleek, console-style application launcher for Windows and Linux with gamepad s
 - **Smart Program Scanner** - Automatically detects installed applications
 - **Quick Search Widget** - Instant app filtering with f/LB
 - **Drag & Drop Reordering** - Reorganize apps with r/RB
-- **System Controls** - Built-in restart/shutdown/Sleep options
+- **System Controls** - Built-in Restart/Shutdown/Sleep options
 
 
  ## 📸 Screenshots
