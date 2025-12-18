@@ -21,7 +21,6 @@ import psutil
 from modules.app_reorder import integrate_reorder_mode
 from modules.search_widget import QuickSearchWidget
 
-# Try to import pygame for joystick support
 try:
     import pygame
     JOYSTICK_AVAILABLE = True
@@ -30,7 +29,6 @@ except ImportError:
     print("Warning: pygame not installed. Joystick support disabled.")
     print("Install with: pip install pygame")
 
-# Try to import requests for image downloading
 try:
     import requests
     REQUESTS_AVAILABLE = True
@@ -39,7 +37,6 @@ except ImportError:
     print("Warning: requests not installed. Online image search disabled.")
     print("Install with: pip install requests")
 
-# Detect OS
 IS_LINUX = platform.system() == "Linux"
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -69,7 +66,6 @@ class ResponsiveScaling:
         return int(base_size * self.scale_factor)
 
 
-# === IMAGE MANAGER CLASS ===
 class ImageManager:
     
     """Gestisce il download e la cache delle immagini per le app"""
@@ -166,7 +162,6 @@ class ImageManager:
         return safe.strip().replace(' ', '_')
 
 
-# === API KEY DIALOG ===
 class ApiKeyDialog(QDialog):
     def __init__(self, current_key="", parent=None):
         super().__init__(parent)
@@ -299,7 +294,6 @@ class ApiKeyDialog(QDialog):
         return self.key_input.text().strip()
 
 
-# === FUNZIONE UTILITY PER ARROTONDARE PIXMAP ===
 def rounded_pixmap(original_path, width, height, radius=24):
     pixmap = QPixmap(original_path)
     if pixmap.isNull():
@@ -395,24 +389,20 @@ class ProgramScanner(QThread):
             if no_display or not name or not exec_path:
                 return None
             
-            # Prova a risolvere il comando
             if ' ' in exec_path:
                 exec_path_cmd = exec_path.split(' ')[0]
             else:
                 exec_path_cmd = exec_path
             
-            # Cerca il comando nel PATH se non è un percorso assoluto
             if not os.path.isabs(exec_path_cmd):
                 import shutil
                 full_path = shutil.which(exec_path_cmd)
                 if full_path:
-                    # Ricostruisci il comando exec con il percorso completo
                     exec_path = exec_path.replace(exec_path_cmd, full_path, 1)
                 else:
                     print(f"Command not found in PATH: {exec_path_cmd} (da {exec_path})")
                     return None # Non possiamo lanciare un comando non trovato
             
-            # Controlla l'esistenza del file solo se non ci sono argomenti
             if ' ' not in exec_path and not os.path.exists(exec_path):
                  print(f"Invalid .desktop path: {exec_path}")
                  return None
@@ -433,17 +423,14 @@ class ProgramScanner(QThread):
         if not icon_name:
             return None
         
-        # Se è già un percorso assoluto
         if os.path.isabs(icon_name) and os.path.exists(icon_name):
             return icon_name
         
-        # Se è un percorso assoluto ma senza estensione
         if os.path.isabs(icon_name) and not os.path.exists(icon_name):
             for ext in ['.png', '.svg', '.xpm']:
                 if os.path.exists(f"{icon_name}{ext}"):
                     return f"{icon_name}{ext}"
 
-        # Cerca nei temi e percorsi standard
         icon_dirs = [
             "/usr/share/icons/hicolor/scalable/apps",
             "/usr/share/icons/hicolor/512x512/apps",
@@ -460,7 +447,6 @@ class ProgramScanner(QThread):
         
         extensions = ['.png', '.svg', '.xpm', '']
         
-        # 1. Cerca per nome esatto
         for icon_dir in icon_dirs:
             if not os.path.exists(icon_dir):
                 continue
@@ -471,7 +457,6 @@ class ProgramScanner(QThread):
                 if os.path.exists(full_path):
                     return full_path
 
-        # 2. Cerca ricorsivamente (più lento, come fallback)
         for icon_dir in [d for d in icon_dirs if 'hicolor' not in d and 'pixmaps' not in d]:
              if not os.path.exists(icon_dir):
                 continue
@@ -480,7 +465,6 @@ class ProgramScanner(QThread):
                     icon_file = f"{icon_name}{ext}"
                     if icon_file in files:
                         full_path = os.path.join(root, icon_file)
-                        # Preferisci risoluzioni più alte
                         if any(size in full_path for size in ['256', '512', 'scalable']):
                             return full_path
         
@@ -655,9 +639,6 @@ class ProgramScanDialog(QDialog):
         return [item.data(Qt.ItemDataRole.UserRole) for item in self.list_widget.selectedItems()]
 
 
-# ==================================
-# === NUOVO WORKER PER DOWNLOAD ===
-# ==================================
 class DownloadWorker(QThread):
     """Worker thread per scaricare immagini in background"""
     progress_update = pyqtSignal(str, int) # Messaggio, percentuale
@@ -672,7 +653,6 @@ class DownloadWorker(QThread):
         self.is_running = True
 
     def run(self):
-        # Filtra solo i programmi non già esistenti
         to_download = []
         for prog in self.selected:
             if prog['name'].lower() not in self.existing:
@@ -691,7 +671,6 @@ class DownloadWorker(QThread):
             percent = int((i + 1) / total * 100)
             self.progress_update.emit(f"Downloading for: {prog['name']}...", percent)
             
-            # Scarica immagine 16:9 (se API key c'è)
             if self.image_manager.api_key and REQUESTS_AVAILABLE:
                 image_result = self.image_manager.get_app_image(prog['name'], prog['path'])
                 if image_result:
@@ -719,12 +698,9 @@ class AppTile(QWidget):
         self.scaling = scaling
         self.is_focused = False
         
-        # === INIZIO OTTIMIZZAZIONE #1: CACHE PIXMAP ===
         self._normal_pixmap = None
         self._focused_pixmap = None
-        # === FINE OTTIMIZZAZIONE #1 ===
         
-        # Dimensioni scalate
         self.normal_width = self.scaling.scale(360)
         self.normal_height = self.scaling.scale(260)
         self.focused_width = self.scaling.scale(400)
@@ -747,8 +723,6 @@ class AppTile(QWidget):
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         
-        # === OTTIMIZZAZIONE #1: Rimossa generazione pixmap da qui ===
-        # La generazione è spostata in set_focused
         
         self.image_label.setStyleSheet(f"""
             QLabel {{
@@ -782,7 +756,6 @@ class AppTile(QWidget):
         layout.addWidget(self.name_label)
         self.setLayout(layout)
         
-        # === OTTIMIZZAZIONE #1: Popola la cache iniziale ===
         self.set_focused(False)
 
     def set_focused(self, focused):
@@ -793,9 +766,7 @@ class AppTile(QWidget):
             self.setFixedSize(self.focused_width, self.focused_height)
             self.image_label.setFixedSize(self.focused_img_width, self.focused_img_height)
             
-            # === INIZIO OTTIMIZZAZIONE #1: USA CACHE FOCUSED ===
             if self._focused_pixmap is None:
-                # Genera solo se non è in cache
                 if icon_path and Path(icon_path).exists():
                     self._focused_pixmap = rounded_pixmap(
                         icon_path, self.focused_img_width, self.focused_img_height, self.border_radius
@@ -805,7 +776,6 @@ class AppTile(QWidget):
                 self.image_label.setPixmap(self._focused_pixmap)
             else:
                 self.image_label.setText(self.app_data['name']) # Fallback
-            # === FINE OTTIMIZZAZIONE #1 ===
             
             self.image_label.setStyleSheet(f"""
                 QLabel {{
@@ -830,9 +800,7 @@ class AppTile(QWidget):
             self.setFixedSize(self.normal_width, self.normal_height)
             self.image_label.setFixedSize(self.normal_img_width, self.normal_img_height)
             
-            # === INIZIO OTTIMIZZAZIONE #1: USA CACHE NORMALE ===
             if self._normal_pixmap is None:
-                # Genera solo se non è in cache
                 if icon_path and Path(icon_path).exists():
                     self._normal_pixmap = rounded_pixmap(
                         icon_path, self.normal_img_width, self.normal_img_height, self.border_radius
@@ -842,7 +810,6 @@ class AppTile(QWidget):
                 self.image_label.setPixmap(self._normal_pixmap)
             else:
                 self.image_label.setText(self.app_data['name']) # Fallback
-            # === FINE OTTIMIZZAZIONE #1 ===
             
             self.image_label.setStyleSheet(f"""
                 QLabel {{
@@ -1071,7 +1038,6 @@ class EditAppDialog(QDialog):
                 """)
    
     def keyPressEvent(self, event: QKeyEvent):
-        # Se la ricerca è aperta, inoltra input a lei
         if hasattr(self, 'quick_search') and self.quick_search.isVisible():
             self.quick_search.keyPressEvent(event)
             return
@@ -1079,13 +1045,11 @@ class EditAppDialog(QDialog):
         if not self.inputs_enabled:
             return
         
-        # Non permettere input se il dialog di progresso è attivo
         if self.progress_dialog and self.progress_dialog.isVisible():
             return
         
         key = event.key()
         
-        # Quick Search con tasto F
         if key == Qt.Key.Key_F:
             self.open_quick_search()
             return
@@ -1351,10 +1315,10 @@ class AddAppDialog(QDialog):
         }
 
 
-class TVLauncher(QMainWindow):
+class LumaTVOS(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.config_file = Path("launcher_apps.json")
+        self.config_file = Path("lumatv_apps.json")
         self.config_data = self.load_config()
         self.apps = self.config_data.get('apps', [])
         self.background_image = self.config_data.get('background', '')
@@ -1380,16 +1344,12 @@ class TVLauncher(QMainWindow):
         
         
         
-        # === INIZIO OTTIMIZZAZIONE #2: INIT VAR WORKER ===
         self.download_worker = None
         self.progress_dialog = None
         self.added_count = 0
-        # === FINE OTTIMIZZAZIONE #2 ===
         
-        # === SCALING SYSTEM ===
         self.scaling = ResponsiveScaling()
 
-        # Quick Search Widget (DOPO scaling!)
 
         self.quick_search = QuickSearchWidget(self.scaling, self)
         self.quick_search.app_selected.connect(self.on_search_app_selected)
@@ -1424,17 +1384,13 @@ class TVLauncher(QMainWindow):
             print(f"Error initializing joystick: {e}")
    
     def detect_joystick(self):
-        # SE abbiamo già un joystick e il driver risponde, NON fare nulla.
-        # Lasciamo che poll_joystick gestisca eventuali disconnessioni.
         if self.joystick is not None:
             return
 
         try:
-            # Reinizializziamo il sottosistema solo se stiamo cercando da zero
             if not pygame.joystick.get_init():
                 pygame.joystick.init()
             
-            # Aggiorniamo gli eventi per vedere se ci sono nuovi device
             pygame.event.pump() 
 
             count = pygame.joystick.get_count()
@@ -1450,7 +1406,6 @@ class TVLauncher(QMainWindow):
                 elif not self.joystick_timer.isActive():
                     self.joystick_timer.start(12)
             else:
-                # Nessun joystick trovato, riproviamo al prossimo tick del timer (5s)
                 pass
 
         except Exception as e:
@@ -1461,7 +1416,6 @@ class TVLauncher(QMainWindow):
         if not self.joystick:
             return
             
-        # Se gli input sono disabilitati (app lanciata), non processiamo ma teniamo vivo
         if not self.inputs_enabled:
             try:
                 pygame.event.pump()
@@ -1470,21 +1424,16 @@ class TVLauncher(QMainWindow):
             return
 
         try:
-            # Questo è fondamentale per mantenere viva la connessione
             pygame.event.pump()
             
-            # Verifica se il joystick è ancora attivo
             if not pygame.joystick.get_init() or pygame.joystick.get_count() == 0:
                 raise pygame.error("Joystick system not ready or no device")
 
-            # --- Lettura Assi ---
             x_axis = self.joystick.get_axis(0)
             y_axis = self.joystick.get_axis(1)
             
-            # ... (Il resto del codice di gestione assi rimane identico) ...
             if self.joystick.get_numhats() > 0:
                 hat = self.joystick.get_hat(0)
-                # ... (Logica Hat) ...
                 if hat != (0, 0):
                     if self.axis_cooldown > 0:
                         self.axis_cooldown -= 1
@@ -1503,27 +1452,23 @@ class TVLauncher(QMainWindow):
                     self.last_hat = hat
                     self.axis_cooldown = 0
 
-            # ... (Logica Stick Analogico) ...
             if abs(x_axis) > self.axis_deadzone or abs(y_axis) > self.axis_deadzone:
                 self.handle_axis(x_axis, y_axis)
             else:
                 self.axis_cooldown = 0
                 self.last_axis_state = {'x': 0, 'y': 0}
 
-            # --- Lettura Bottoni ---
             for i in range(self.joystick.get_numbuttons()):
                 if self.joystick.get_button(i):
                     self.handle_button(i)
 
         except (pygame.error, AttributeError) as e:
             print(f"⚠️ Joystick connection lost: {e}")
-            # Chiudiamo correttamente
             try:
                 self.joystick.quit()
             except:
                 pass
             
-            # Impostiamo a None così detect_joystick inizierà a cercarlo di nuovo
             self.joystick = None
             if self.joystick_timer:
                 self.joystick_timer.stop()
@@ -1532,7 +1477,6 @@ class TVLauncher(QMainWindow):
             print(f"Error polling joystick: {e}")
    
     def handle_axis(self, x_axis, y_axis):
-        # Se la ricerca è aperta, gestisci navigazione
         if hasattr(self, 'quick_search') and self.quick_search.isVisible():
             if self.axis_cooldown > 0:
                 self.axis_cooldown -= 1
@@ -1551,7 +1495,6 @@ class TVLauncher(QMainWindow):
                 self.last_axis_state['y'] = y_axis
             return
         
-        # Comportamento normale launcher
         if self.axis_cooldown > 0:
             self.axis_cooldown -= 1
             return
@@ -1573,7 +1516,6 @@ class TVLauncher(QMainWindow):
             self.last_axis_state['y'] = y_axis
    
     def handle_button(self, button_index):
-        # Se la ricerca è aperta, gestisci input specifici
         if hasattr(self, 'quick_search') and self.quick_search.isVisible():
             current_time = pygame.time.get_ticks()
             if button_index in self.button_cooldown:
@@ -1581,7 +1523,6 @@ class TVLauncher(QMainWindow):
                     return
             self.button_cooldown[button_index] = current_time
             
-            # Mappa pulsanti per la ricerca
             if button_index == 0:  # A
                 self.quick_search.handle_joypad_input(Qt.Key.Key_Return)
             elif button_index == 1:  # B
@@ -1590,7 +1531,6 @@ class TVLauncher(QMainWindow):
                 self.quick_search.handle_joypad_input(Qt.Key.Key_E)
             return
         
-        # Comportamento normale launcher
         current_time = pygame.time.get_ticks()
         if button_index in self.button_cooldown:
             if current_time - self.button_cooldown[button_index] < 300:
@@ -1658,7 +1598,7 @@ class TVLauncher(QMainWindow):
         self.showFullScreen()
 
     def init_ui(self):
-        self.setWindowTitle("TV Launcher")
+        self.setWindowTitle("LumaTV OS")
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         if JOYSTICK_AVAILABLE and self.joystick:
             print(f"🎮 Joystick ready: {self.joystick.get_name()}")
@@ -1681,7 +1621,6 @@ class TVLauncher(QMainWindow):
         self.setCentralWidget(main_widget)
         main_layout = QVBoxLayout(main_widget)
         
-        # SCALING DEI MARGINI
         main_layout.setContentsMargins(
             self.scaling.scale(5),
             self.scaling.scale(48),
@@ -1741,7 +1680,6 @@ class TVLauncher(QMainWindow):
         header_layout.addLayout(clock_layout)
         header_layout.addStretch()
         
-        # API KEY BUTTON
         api_btn = QPushButton()
         api_btn.setIcon(QIcon("assets/icons/key.png"))
         api_btn.setIconSize(QSize(self.scaling.scale(23), self.scaling.scale(23)))
@@ -1827,10 +1765,7 @@ class TVLauncher(QMainWindow):
         self.tile_width = self.scaling.scale(360)
         self.tile_spacing = self.scaling.scale(17)
         
-        # --- INIZIO FIX ---
-        # Ripristina l'allineamento originale a sinistra
         main_layout.addWidget(self.carousel_container, alignment=Qt.AlignmentFlag.AlignLeft)
-        # --- FINE FIX ---
         
         main_layout.addSpacing(20)
         main_layout.addStretch(1)
@@ -1881,7 +1816,6 @@ class TVLauncher(QMainWindow):
         self.close_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button_layout.addWidget(self.close_btn)
 
-        # Aggiorna la lista dei pulsanti (importante per la navigazione!)
         self.menu_buttons = [
             ("restart", self.restart_btn),
             ("sleep", self.sleep_btn),
@@ -2183,14 +2117,11 @@ class TVLauncher(QMainWindow):
                 elif action == "shutdown":
                     subprocess.run(["shutdown", "/s", "/t", "0"], shell=True)
                 elif action == "sleep":
-                    # Windows: sospensione ibrida (più veloce del semplice sleep)
                     subprocess.run(["rundll32.exe", "powrprof.dll,SetSuspendState", "0,1,0"], shell=True)
 
             elif system == "Linux":
                 if action == "restart":
-                    # systemd (99% delle distro moderne)
                     subprocess.run(["systemctl", "reboot"], check=False)
-                    # fallback per sistemi senza systemd
                     subprocess.run(["reboot"], check=False)
 
                 elif action == "shutdown":
@@ -2198,7 +2129,6 @@ class TVLauncher(QMainWindow):
                     subprocess.run(["shutdown", "-h", "now"], check=False)
 
                 elif action == "sleep":
-                    # Metodo universale su Linux con systemd (funziona ovunque)
                     subprocess.run(["systemctl", "suspend"], check=True)
 
             
@@ -2224,7 +2154,6 @@ class TVLauncher(QMainWindow):
             self.current_index = 0
         num_apps = len(self.apps)
         
-        # Se ci sono 5 o meno app, mostra solo quelle senza ripetizioni
         if num_apps <= 5:
             for i in range(num_apps):
                 tile = AppTile(self.apps[i], self.scaling, self.carousel_container)
@@ -2233,7 +2162,6 @@ class TVLauncher(QMainWindow):
                 tile.set_focused(is_focused)
                 self.tiles.append(tile)
         else:
-            # MODIFICATO: center_tile_index ora è 0 (sinistra) invece di 4 (centro)
             center_tile_index = 0
             for i in range(self.max_visible_tiles):
                 app_offset = i - center_tile_index
@@ -2255,24 +2183,19 @@ class TVLauncher(QMainWindow):
         
         num_apps = len(self.apps)
         
-        # Con 5 o meno app, allinea a sinistra con la focused per prima
         if num_apps <= 5:
-            # MODIFICATO: Inizia dal margine sinistro invece del centro
             start_x = self.scaling.scale(5)  # Margine sinistro
             
             x_pos = int(start_x)
             for i, tile in enumerate(self.tiles):
                 tile.move(int(x_pos), 0)
-                # Usa la larghezza effettiva della tile (normale o focused)
                 if i == self.current_index:
                     x_pos += self.focused_width + self.tile_spacing
                 else:
                     x_pos += self.normal_width + self.tile_spacing
         else:
-            # MODIFICATO: Usa la logica originale ma adattata per left alignment
             center_tile_index = 0
             
-            # Posizione iniziale: margine sinistro
             start_x = self.scaling.scale(5)
             
             x_pos = int(start_x)
@@ -2288,38 +2211,30 @@ class TVLauncher(QMainWindow):
         
         num_apps = len(self.apps)
         
-        # Con 5 o meno app: solo cambio focus e riposizionamento
         if num_apps <= 5:
             for i, tile in enumerate(self.tiles):
                 tile.set_focused(i == self.current_index)
             self._position_all_tiles()  # Riposiziona dopo il cambio di dimensione
             return  # ESCE QUI, non chiama reposition_tiles
         
-        # Comportamento per molte app
         self.is_animating = True
         shift_distance = self.tile_width + self.tile_spacing
         
-        # CRITICAL: When moving left, we need to add the new tile BEFORE animation
         if direction == "left":
-            # Pre-add the tile that will come from the left
-            # We need to reuse the rightmost tile (last in array)
             last_tile = self.tiles[-1]  # Get reference but don't remove yet
             new_app_idx = self.current_index % num_apps
             last_tile.app_data = self.apps[new_app_idx]
             last_tile.app_index = new_app_idx
             
-            # Invalida cache pixmap
             last_tile._normal_pixmap = None
             last_tile._focused_pixmap = None
             
             last_tile.name_label.setText(self.apps[new_app_idx]['name'])
             last_tile.set_focused(False)
             
-            # Position it OFF-SCREEN to the left BEFORE moving it
             start_x = self.scaling.scale(50)
             last_tile.move(int(start_x - shift_distance), 0)
             
-            # Now remove from end and insert at beginning
             self.tiles.pop()
             self.tiles.insert(0, last_tile)
         
@@ -2346,13 +2261,11 @@ class TVLauncher(QMainWindow):
         center_tile_index = 0  # Focus is now on the left
         
         if direction == "right":
-            # Moving right: remove leftmost tile, add new one to the right
             first_tile = self.tiles.pop(0)
             new_app_idx = (self.current_index + (self.max_visible_tiles - 1)) % num_apps
             first_tile.app_data = self.apps[new_app_idx]
             first_tile.app_index = new_app_idx
             
-            # Invalida cache pixmap
             first_tile._normal_pixmap = None
             first_tile._focused_pixmap = None
             
@@ -2360,14 +2273,11 @@ class TVLauncher(QMainWindow):
             first_tile.set_focused(False)
             self.tiles.append(first_tile)
         else:
-            # Moving left: tile was already repositioned in animate_carousel
-            # We need to update the rightmost tile for the next scroll
             last_tile = self.tiles[-1]
             new_app_idx = (self.current_index + (self.max_visible_tiles - 1)) % num_apps
             last_tile.app_data = self.apps[new_app_idx]
             last_tile.app_index = new_app_idx
             
-            # Invalida cache pixmap
             last_tile._normal_pixmap = None
             last_tile._focused_pixmap = None
             
@@ -2379,9 +2289,6 @@ class TVLauncher(QMainWindow):
             
         self._position_all_tiles()
         self.is_animating = False
-    # ============================================
-    # === INIZIO OTTIMIZZAZIONE #2: METODI WORKER ===
-    # ============================================
     def scan_programs(self):
         dialog = ProgramScanDialog(self.image_manager, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -2391,7 +2298,6 @@ class TVLauncher(QMainWindow):
                 self.activateWindow()
                 return
 
-            # --- NUOVA GESTIONE THREAD ---
             self.added_count = 0 # Resetta il contatore
             self.progress_dialog = QProgressDialog("Image searching in progress..", "Cancel", 0, 100, self)
             self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
@@ -2399,7 +2305,6 @@ class TVLauncher(QMainWindow):
             self.progress_dialog.setFixedSize(self.scaling.scale(450), self.scaling.scale(150))
             self.progress_dialog.setValue(0)
             
-            # Stile per il QProgressDialog
             self.progress_dialog.setStyleSheet("""
                 QProgressDialog {
                     background-color: #1a1a1a;
@@ -2438,15 +2343,12 @@ class TVLauncher(QMainWindow):
             self.download_worker.progress_update.connect(self._on_download_progress)
             self.download_worker.finished.connect(self._on_download_finished)
             
-            # Connetti il pulsante "Annulla"
             self.progress_dialog.canceled.connect(self.download_worker.stop) 
             
             self.download_worker.start()
             self.progress_dialog.show()
-            # --- FINE GESTIONE THREAD ---
             
         else:
-            # L'utente ha chiuso il ProgramScanDialog
             self.setFocus()
             self.activateWindow()   
 
@@ -2470,7 +2372,6 @@ class TVLauncher(QMainWindow):
         self.save_config()
         self.build_infinite_carousel()
         
-        # Mostra messaggio solo se il worker non è stato annullato
         if self.download_worker and self.download_worker.is_running:
             if self.added_count > 0:
                 QMessageBox.information(self, "Done!", f"Added {self.added_count} Program(s) with success!")
@@ -2482,9 +2383,6 @@ class TVLauncher(QMainWindow):
         
         self.setFocus()
         self.activateWindow()
-    # ==========================================
-    # === FINE OTTIMIZZAZIONE #2: METODI WORKER ===
-    # ==========================================
    
     def add_app(self):
         dialog = AddAppDialog(self)
@@ -2494,8 +2392,6 @@ class TVLauncher(QMainWindow):
                 if (not app_data['icon'] or app_data['icon'] == app_data['path']) and self.image_manager.api_key and REQUESTS_AVAILABLE:
                     print(f"📥 Searching image for: {app_data['name']}")
                     
-                    # NOTA: questo download singolo è ancora bloccante.
-                    # Per ottimizzare *anche questo*, servirebbe un altro worker.
                     image_result = self.image_manager.get_app_image(app_data['name'], app_data['path'])
                     if image_result:
                         app_data['icon'] = image_result
@@ -2574,8 +2470,6 @@ class TVLauncher(QMainWindow):
             return
         app = self.apps[self.current_index]
         try:
-            # Per Linux, Popen con shell=True è necessario per gestire
-            # comandi che non sono percorsi assoluti, come 'steam' o 'gamemoderun ...'
             process = subprocess.Popen(app['path'], shell=True, 
                                        stdout=subprocess.DEVNULL, 
                                        stderr=subprocess.DEVNULL,
@@ -2600,7 +2494,6 @@ class TVLauncher(QMainWindow):
     def keyPressEvent(self, event: QKeyEvent):
         if not self.inputs_enabled:
             return
-        # Non permettere input se il dialog di progresso è attivo
         if self.progress_dialog and self.progress_dialog.isVisible():
             return
             
@@ -2611,11 +2504,9 @@ class TVLauncher(QMainWindow):
             if key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
                 return
 
-        # --- AGGIUNGI QUESTO BLOCCO ---
         if key in (Qt.Key.Key_F, Qt.Key.Key_Search, Qt.Key.Key_Menu, Qt.Key.Key_F3):
             self.open_quick_search()
             return
-        # ------------------------------        
         if key == Qt.Key.Key_Down:
             if not self.is_in_menu:
                 self.is_in_menu = True
@@ -2656,12 +2547,10 @@ class TVLauncher(QMainWindow):
             elif self.apps and not self.is_animating:
                 num_apps = len(self.apps)
                 if num_apps <= 5:
-                    # Con poche app: scorrimento lineare
                     if self.current_index < num_apps - 1:
                         self.current_index += 1
                         self.animate_carousel("right")
                 else:
-                    # Con molte app: comportamento infinito ORIGINALE
                     self.current_index = (self.current_index + 1) % len(self.apps)
                     self.animate_carousel("right")
         elif key == Qt.Key.Key_Left:
@@ -2671,12 +2560,10 @@ class TVLauncher(QMainWindow):
             elif self.apps and not self.is_animating:
                 num_apps = len(self.apps)
                 if num_apps <= 5:
-                    # Con poche app: scorrimento lineare
                     if self.current_index > 0:
                         self.current_index -= 1
                         self.animate_carousel("left")
                 else:
-                    # Con molte app: comportamento infinito ORIGINALE
                     self.current_index = (self.current_index - 1) % len(self.apps)
                     self.animate_carousel("left")
         elif key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
@@ -2747,7 +2634,6 @@ class TVLauncher(QMainWindow):
 
    
     def closeEvent(self, event):
-        # Assicurati di fermare il worker se è in esecuzione
         if self.download_worker and self.download_worker.isRunning():
             self.download_worker.stop()
             self.download_worker.wait(1000) # Aspetta max 1 secondo
@@ -2769,17 +2655,14 @@ class TVLauncher(QMainWindow):
         print("Tentativo di sospensione Linux avviato...")
         
         methods = [
-            # Metodo 1: Systemd standard (funziona se l'utente ha i permessi via PolicyKit)
             ["systemctl", "suspend"],
             
-            # Metodo 2: D-Bus (metodo standard per ambienti desktop)
             ["dbus-send", "--system", "--print-reply", 
              "--dest=org.freedesktop.login1", 
              "/org/freedesktop/login1", 
              "org.freedesktop.login1.Manager.Suspend", 
              "boolean:true"],
             
-            # Metodo 3: Sudo Systemctl (Richiede la configurazione NOPASSWD al punto 3)
             ["sudo", "systemctl", "suspend"],
         ]
 
@@ -2787,8 +2670,6 @@ class TVLauncher(QMainWindow):
         for cmd in methods:
             try:
                 print(f"Provo comando: {' '.join(cmd)}")
-                # Usiamo subprocess.call per lanciare il comando. 
-                # Devnull nasconde l'output non necessario.
                 result = subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 
                 if result == 0:
@@ -2814,7 +2695,7 @@ def main():
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
     
-    launcher = TVLauncher()
+    launcher = LumaTVOS()
     launcher.show()
     launcher.setFocus()
     launcher.activateWindow()
